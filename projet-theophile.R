@@ -68,16 +68,18 @@ na.fail(recettes.echant)
 
 summary(recettes.echant)
 
-# TODO : blabla - dénombrer les noms des pays
+sort(table(recettes.echant[,1]), decreasing = T)
+
+# TODO : blabla
 
 ## 7 - group ingrédients
 
 pays <- unique(recettes.echant[,1])
 ingredients <- colnames(recettes.echant[,2:ncol(recettes.echant)])
 
-ingredient.pays <- data.frame(matrix(nrow = length(ingredients), ncol = length(pays)))
-colnames(ingredient.pays) <- pays
-row.names(ingredient.pays) <- ingredients
+ingredients.pays <- data.frame(matrix(nrow = length(ingredients), ncol = length(pays)))
+colnames(ingredients.pays) <- pays
+row.names(ingredients.pays) <- ingredients
 
 for (i in 1:length(ingredients)) {
   ingredient <- ingredients[i]
@@ -85,19 +87,31 @@ for (i in 1:length(ingredients)) {
   for (j in 1:length(pays)) {
     p <- pays[j]
     
-    ingredient.pays[i, j] <- sum(recettes.echant[recettes.echant[,1] == p,][,ingredient]) mean
+    ingredients.pays[i, j] <- mean(recettes.echant[recettes.echant[,1] == p,][,ingredient])
   }
 }
 
-# On compte le nombre de fois ou chaque ingrédients apparait dans chaque pays différents.
-# On pourait aussi faire la moyenne pour chaque pays des fois ou il apparait dans les recettes.
-# -> 1 s'il apparait à chaque fois 0 sinon -- surement plus malin
-
-# en tout cas on doit centrer en colonnes si on fait la somme.
-
-scale(ingredient.pays, center = F, scale = T)
-
 # TODO : similarités - disimilarités
+disim.ingredients.pays <- dist(ingredients.pays, "euclidian") # pris au hasard, y reflechir !!!
+
+
+## 8 - classif ascendante hierarchique
+
+hclust.ingredients.pays <- hclust(disim.ingredients.pays) # methodes : "single", "average", ...
+plot(hclust.ingredients.pays)
+
+
+## 9 - k-médoïdes
+
+library(cluster)
+pam(ingredients.pays, 5)
+
+
+
+
+
+
+
 
 
 
