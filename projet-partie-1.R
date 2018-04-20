@@ -104,7 +104,8 @@ plot(hclust.ingredients.pays)
 ## 9 - k-médoïdes
 
 library(cluster)
-pam(ingredients.pays, 5)
+pam.recettes.pays <- pam(ingredients.pays, 3)
+plot(pam.recettes.pays)
 
 
 
