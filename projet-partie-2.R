@@ -18,34 +18,72 @@ kmeans.addaptative <- function(X, k, volk = rep(1, k), niter = 100, ness = 1, ep
   }
   grp <- apply(dist.X, 1, which.min)
   
+  result = NA
+  
   # iterations
   
-  
-  for (iter in 1:niter) {
-    U.kp <- U.k
-    for (i in 1:k) {
-      grp.i <- grp == i
-      U.k[i,] <- colMeans(X[grp.i,])                        # update centers
-      V.k[,,i] <- cov(X[grp.i,] - U.k[i,])                  # update cov. mat.
-      V.k[,,i] <- V.k[,,i] * (volk[i]*det(V.k[,,i]))^(-1/p) # normalizing
+  for (ess in 1:ness){
+    for (iter in 1:niter) {
+    
+      U.kp <- U.k
+    
       
-      dist.X[,i] <- distXY(X, U.k[i,], solve(V.k[,,i])) # compute new Mahalanobis dist.
+      for (i in 1:k) {
+        
+        grp.i <- grp == i
+        
+        sz <- table(grp)[names(table(grp))==i]
+        
+        cvm <- matrix(0, p, p)
+        
+        for  (j in 1:sz) {
+          cvm <- cvm + ((X[grp.i,][j,]-U.k[i,]) %*% t(X[grp.i,][j,]-U.k[i,]) / sz)
+          #print(cvm[1,1])
+        }
+        
+        
+        U.k[i,] <- colMeans(X[grp.i,])                        # update centers
+        
+        V.k[,,i] <- cvm #get best way
+        V.k[,,i] <- cov(X[grp.i,] - U.k[i,])                  # update cov. mat.
+        
+        #print(V.k[,,i] - cvm)
+        
+        V.k[,,i] <- V.k[,,i] * (volk[i]*det(V.k[,,i]))^(-1/p) # normalizing
+        if( det(V.k[,,i]) == 0) {
+          U.k[i,] <- U.kp[i,]
+          break
+        }
+        dist.X[,i] <- distXY(X, U.k[i,], solve(V.k[,,i])) # compute new Mahalanobis dist.
+      }
+      
+      grp <- apply(dist.X, 1, which.min) 
+      
+      if (sum((U.k-U.kp)^2) < eps) {
+        break
+      }
     }
     
-    grp <- apply(dist.X, 1, which.min) 
+    crit <- sum(apply(t(1:n), 2, function(x) dist.X[x,grp[x]])) # sum(dist.X[,grp])
     
-    if (sum((U.k-U.kp)^2) < eps) {
-      break
+    # algorithm has converged
+    if (ess == 1) {
+      result <- list(groups = grp, centers = U.k, nrml.cov = V.k, nb.iter = iter, crit = crit)
+    } else if (crit < result$crit) {
+      result <- list(groups = grp, centers = U.k, nrml.cov = V.k, nb.iter = iter, crit = crit)
     }
   }
-  
-  result <- list(groups = grp, centers = U.k, nrml.cov = V.k, nb.iter = iter)
-  
+    
   return(result)
 
 }
 
-toto = kmeans.addaptative(as.matrix(ingredients.pays), 3)
-X= ingredients.pays
-toto
+## application
+
+acp.iris <- princomp(iris[1:4])
+
+grp.iris <- kmeans.addaptative(as.matrix(iris[,1:4]), 4, ness = 40)
+
+plot(acp.iris$scores[,2]~acp.iris$scores[,1], col = c("red","green","blue")[iris[,5]])
+plot(acp.iris$scores[,2]~acp.iris$scores[,1], col = c("red","green","blue")[grp.iris$groups], pch = c(2, 4, 8)[iris[,5]])
 
