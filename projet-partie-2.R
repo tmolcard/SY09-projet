@@ -32,32 +32,15 @@ kmeans.addaptative <- function(X, k, volk = rep(1, k), niter = 100, ness = 1, ep
       for (i in 1:k) {
         
         grp.i <- grp == i
-        grp.count <- table(grp)
+        grp.nb <- nrow(X[grp.i,])
         
-        if(is.na(match(i, grp))){
-          break
+        if(qr(X[grp.i,])$rank <= p){
+          break #If the rank of the matrix is < P
         }
-        
-        if(grp.count[names(grp.count)==i] <= p) {
-          break
-        }
-        
-        #sz <- table(grp)[names(table(grp))==i]
-        
-        #cvm <- matrix(0, p, p)
-        
-        #for  (j in 1:sz) {
-        #  cvm <- cvm + ((X[grp.i,][j,]-U.k[i,]) %*% t(X[grp.i,][j,]-U.k[i,]) / sz)
-        #  #print(cvm[1,1])
-        #}
         
         U.k[i,] <- colMeans(X[grp.i,])                        # update centers
         
-        #V.k[,,i] <- cvm #find best way
-        V.k[,,i] <- cov(X[grp.i,] - U.k[i,])                  # update cov. mat.
-        
-        #print(V.k[,,i] - cvm)
-        
+        V.k[,,i] <- cov(X[grp.i,]) * (grp.nb-1) / grp.nb      # update cov. mat.
         V.k[,,i] <- V.k[,,i] * (volk[i]*det(V.k[,,i]))^(-1/p) # normalizing
         
         dist.X[,i] <- distXY(X, U.k[i,], solve(V.k[,,i])) # compute new Mahalanobis dist.
@@ -81,15 +64,30 @@ kmeans.addaptative <- function(X, k, volk = rep(1, k), niter = 100, ness = 1, ep
   }
     
   return(result)
-
 }
 
 ## application
 
-#acp.iris <- princomp(iris[1:4])
-
-grp.iris <- kmeans.addaptative(as.matrix(iris[,1:4]), 3, ness = 20)
+acp.iris <- princomp(iris[1:4])
+grp.iris <- kmeans.addaptative(as.matrix(iris[,1:4]), 3, ness = 200)
 
 plot(acp.iris$scores[,2]~acp.iris$scores[,1], col = c("red","green","blue")[iris[,5]])
 plot(acp.iris$scores[,2]~acp.iris$scores[,1], col = c("red","green","blue")[grp.iris$groups], pch = c(2, 4, 8)[iris[,5]])
+grp.iris$crit
 grp.iris$centers
+
+
+##2.2
+
+X <- read.csv("donnees/Synth1.csv", header=T, row.names=1)
+z <- X[,3]
+X <- X[,-3]
+
+grp.X <- kmeans.addaptative(as.matrix(X), 2, ness = 5)
+grp.km.X <- kmeans(X, X[sample(nrow(X), 2), ], iter.max = 100, nstart = 5)
+
+plot(X[,2]~X[,1], col = c("red","blue")[z])
+plot(X[,2]~X[,1], col = c("red","blue")[grp.X$groups], pch = c(2, 4)[z])
+points(grp.X$centers, pch = 3, cex = 3)
+plot(X[,2]~X[,1], col = c("red","blue")[grp.km.X$cluster], pch = c(2, 4)[z])
+
