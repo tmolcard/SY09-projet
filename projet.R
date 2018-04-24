@@ -80,3 +80,54 @@ plot(pam(ingredients.pays,2)) # 2
 # Question 2 ---------------------
 source("fonctions/distXY.r")
 
+fonction <- function(X, K, v=rep(1,K), niter=100, ness=1, eps=1e-5){
+  
+  if(is.matrix(X)) X <- as.matrix(X)
+  res <- rep(0, ness)
+  for(ess in 1:ness){
+    # initialisation
+    n <- nrow(X)
+    p <- ncol(X)
+    centers <- X[sample(n, K),]
+    # pk est le volume souhaité pour la matrice Vk(-1)
+    V <- sapply(v, function(x) x^(-1/p) * diag(p), simplify = "array")
+    
+    for(i in 1:niter){
+      # partition
+      distance <- matrix(data = NA, nrow = n, ncol = K)
+      for(k in 1:K){
+        distance[,k] <- distXY(X, centers[k,], V[,,k])
+      }
+      P <- apply(distance, 1, which.min)
+      # mise a jour des parametres
+      centersInit <- centers
+      for(k in 1:K)
+      {
+        centers[k,] <- colMeans(X[P==k,])
+        nb <- nrow(X[P==k,])
+        VCov <- crossprod(sweep(X[P==k,], 2, centers[k,])) / nb
+        V[,,k] <- (v[k] * det(VCov))^(-1/p) * VCov
+      }
+      dtot <- sum((centers - centersInit)^2)
+      if(dtot < eps) break()
+    }
+    #memoriser la meilleur opt (a faire)
+  }
+  # retourner les resultats avec list
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
