@@ -61,7 +61,6 @@ for (i in 1:length(ingredients)) {
   
   for (j in 1:length(pays)) {
     p <- pays[j]
-    
     ingredients.pays[i, j] <- mean(recettesE[recettesE[,1] == p,][,ingredient])
   }
 }
@@ -80,54 +79,132 @@ plot(pam(ingredients.pays,2)) # 2
 # Question 2 ---------------------
 source("fonctions/distXY.r")
 
-fonction <- function(X, K, v=rep(1,K), niter=100, ness=1, eps=1e-5){
-  
-  if(is.matrix(X)) X <- as.matrix(X)
-  res <- rep(0, ness)
+KmeansDistAdaptative <- function(X, centers, v=rep(1,K), niter=100, ness=1, eps=1e-5){
+  # --- preparation ---
+  if(!is.matrix(X)) X <- as.matrix(X)
+  n <- nrow(X)
+  p <- ncol(X)
+  dtot_opt <- 999999
+  res <- NA
   for(ess in 1:ness){
-    # initialisation
-    n <- nrow(X)
-    p <- ncol(X)
-    centers <- X[sample(n, K),]
-    # pk est le volume souhaité pour la matrice Vk(-1)
+    
+    # --- initialisation ---
+    if(class(centers) == "numeric"){
+      # centres des groupes
+      K <- centers
+      centers <- X[sample(n, K),]
+    }
+    else if(ncol(centers) == p){
+      if(!is.matrix(centers)) centers <- as.matrix(centers)
+      K <- nrow(centers)
+    }
+    else{
+      cat("Error : Format of centers not correct !")
+      return(res)
+    }
+    # V est la matrice cov corrigee, v est le volume souhaité pour la matrice Vk(-1)
     V <- sapply(v, function(x) x^(-1/p) * diag(p), simplify = "array")
+    # distance Mahalanobis
+    distance <- matrix(data = NA, nrow = n, ncol = K)
+    for(k in 1:K){
+      distance[,k] <- distXY(X, centers[k,], solve(V[,,k]))
+    }
+    # groupe
+    P <- apply(distance, 1, which.min)
     
     for(i in 1:niter){
-      # partition
-      distance <- matrix(data = NA, nrow = n, ncol = K)
-      for(k in 1:K){
-        distance[,k] <- distXY(X, centers[k,], V[,,k])
-      }
-      P <- apply(distance, 1, which.min)
-      # mise a jour des parametres
+      
+      # --- mise a jour des parametres ---
+      
+      # sauvegarder la centre precendante
       centersInit <- centers
+      # pour chaque groupe
       for(k in 1:K)
       {
+        # nouvelles centres
         centers[k,] <- colMeans(X[P==k,])
-        nb <- nrow(X[P==k,])
-        VCov <- crossprod(sweep(X[P==k,], 2, centers[k,])) / nb
+        # nouvelle covariance au sein de groupe
+        VCov <- tcrossprod(apply(X[P==k,], 1, function(x) x-centers[k,])) / nrow(X[P==k,])
+        # OU crossprod(sweep(X[P==k,], 2, centers[k,])) / nb
+        # nouvelle covariance corrigee
         V[,,k] <- (v[k] * det(VCov))^(-1/p) * VCov
+        # nouvelle distance
+        distance[,k] <- distXY(X, centers[k,], solve(V[,,k]))
       }
-      dtot <- sum((centers - centersInit)^2)
-      if(dtot < eps) break()
+      # nouvelle groupe
+      P <- apply(distance, 1, which.min)
+      # difference entre deux centres
+      if(sum((centers - centersInit)^2) < eps) break()
     }
-    #memoriser la meilleur opt (a faire)
+    # s'il converge, la valeur de critere
+    dtot <- sum(sapply(1:K, function(k) sum(distance[P==k,k])))
+    if(dtot < dtot_opt){
+      dtot_opt <- dtot
+      # sauvegarder les resultats
+      res <- list(critere = dtot_opt, nb_iteration = i, partition = P, centres = centers, 
+                    cov_normalisee = V)
+    }
   }
-  # retourner les resultats avec list
+  return(res)
 }
 
 
 
 
+# Applications
+library(mclust)
 
+# Synth1
+X <- read.csv("donnees/Synth1.csv", header=T, row.names=1)
+z <- X[,3]
+X <- X[,-3]
+resKmeansClassique <- kmeans(X, 2, nstart=5)
+resKmeansDistAdaptative <- KmeansDistAdaptative(X, 2, ness=5)
+adjustedRandIndex(resKmeansClassique$cluster,z)
+adjustedRandIndex(resKmeansDistAdaptative$partition,z)
 
+# Synth2
+X <- read.csv("donnees/Synth2.csv", header=T, row.names=1)
+z <- X[,3]
+X <- X[,-3]
+resKmeansClassique <- kmeans(X, 2, nstart=5)
+resKmeansDistAdaptative <- KmeansDistAdaptative(X, 2, ness=5)
+adjustedRandIndex(resKmeansClassique$cluster,z)
+adjustedRandIndex(resKmeansDistAdaptative$partition,z)
 
+# Synth3
+X <- read.csv("donnees/Synth3.csv", header=T, row.names=1)
+z <- X[,3]
+X <- X[,-3]
+resKmeansClassique <- kmeans(X, 2, nstart=5)
+resKmeansDistAdaptative <- KmeansDistAdaptative(X, 2, ness=5)
+adjustedRandIndex(resKmeansClassique$cluster,z)
+adjustedRandIndex(resKmeansDistAdaptative$partition,z)
 
+# iris
+data(iris)
+X <- iris[,1:4]
+z <- iris[,5]
 
+resKmeansClassique <- kmeans(X, 2, nstart=5)
+resKmeansDistAdaptative <- KmeansDistAdaptative(X, 3, ness=5)
 
+resKmeansClassique <- kmeans(X, 3, nstart=5)
+resKmeansDistAdaptative <- KmeansDistAdaptative(X, 3, ness=5)
+adjustedRandIndex(resKmeansClassique$cluster,z)
+adjustedRandIndex(resKmeansDistAdaptative$partition,z)
 
+resKmeansClassique <- kmeans(X, 4, nstart=5)
+resKmeansDistAdaptative <- KmeansDistAdaptative(X, 4, ness=5)
 
+resKmeansClassique <- kmeans(X, 5, nstart=5)
+resKmeansDistAdaptative <- KmeansDistAdaptative(X, 5, ness=5)
 
+# pas compris pour K=1
 
-
+# Spam
+Spam <- read.csv("donnees/spam.csv", header=T, row.names=1)
+X <- Spam[,-58]
+z <- Spam[,58]
+# pre-traitement
 
