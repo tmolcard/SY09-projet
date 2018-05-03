@@ -1,0 +1,98 @@
+\documentclass[a4paper, titlepage]{report}
+
+\usepackage[francais]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{color}
+
+\titleformat{\chapter}[display]
+  {\bfseries\Large}
+  {\filright\textsc{\chaptertitlename} \LARGE\thechapter}
+  {1ex}
+  {\titlerule\vspace{1ex}\filleft}
+  [\vspace{1ex}\titlerule]
+
+
+\definecolor{gris}{rgb}{0.97,0.97,0.97}
+\definecolor{vert}{rgb}{0,0.6,0}
+\definecolor{mauve}{rgb}{0.5,0,0.5}
+\definecolor{rose}{rgb}{1,0.5,1}
+\definecolor{cyan}{rgb}{0.1,0.4,0.6}
+\definecolor{marron}{rgb}{0.4,0.2,0}
+\definecolor{jaune}{rgb}{1,0.6,0}
+\definecolor{bleu}{rgb}{0,0,0.8}
+
+\lstset{
+	language=R,	
+	frame=tblr,
+	numbers=left,
+	breaklines=true,
+	backgroundcolor=\color{gris},
+    basicstyle=\small\ttfamily,
+    stringstyle=\color{vert},
+    otherkeywords={0,1,2,3,4,5,6,7,8,9},
+    morekeywords={TRUE,FALSE},
+    deletekeywords={data,frame,length,as,character},
+    keywordstyle=\color{blue},
+    commentstyle=\color{vert},
+}
+
+
+\title{Rapport Projet SY09}
+\date{3 mai 2018}
+\author{Yiqing \textsc{Su} et Théophile \textsc{Molcard}}
+
+
+\begin{document}
+
+\renewcommand{\chaptername}{Partie}
+
+
+\maketitle
+
+\tableofcontents
+
+
+
+\chapter{Cuisine}
+
+
+\section{Analyse exploratoire}
+
+\section{Analyse en composantes principales}
+
+\section{Analyse ascendante hiérarchique}
+
+\section{K-Means}
+
+\section{Comparaison}
+
+\section{Analyse descriptive}
+
+\section{Similarité - Dissimilarité}
+
+\section{Classification ascendante hiérarchique}
+
+\section{K-Médïodes}
+
+
+
+\chapter{K-Means Adaptatif}
+
+
+\section{Données synthétiques}
+
+\section{Iris}
+
+\section{Spam}
+
+
+
+\chapter*{Annexe}
+\lstinputlisting[firstline=0, lastline=108]{./doc/partie-1.R}
+
+
+\end{document}
