@@ -7,6 +7,7 @@
 \usepackage{listings}
 \usepackage{titlesec}
 \usepackage{color}
+\usepackage{graphicx}
 
 \titleformat{\chapter}[display]
   {\bfseries\Large}
@@ -59,10 +60,35 @@
 
 \chapter{Cuisine}
 
+Le jeu de données à étudier de la première partie est un ensemble de recettes de cuisine de diverses origines.\\
+\indent Pour la question de 1.1 jusqu'à 1.5, le jeu de données utilisé est une version agrégée par origine. Puis pour les restes questions, il s'agit d'utiliser les données sans agrégation, autrement dit, il y a toutes les recettes de chaque pays ou région.
 
 \section{Analyse exploratoire}
+Le premier jeu de données comporte 26 lignes et 51 colonnes. Une ligne représente une information synthétique d'une recette pour un pays ou une région. Puis la première colonne indique le nom du pays ou de la région et les autres colonnes représentent l'utilisation des 50 ingrédients dans la recette.\\
+\indent Avec \textbf{boxplot} et \textbf{summary}, nous pouvons voir que les données sont toutes entre 0 et 1. La moyenne pour chaque boîte à moustache est inférieur à 0,5. Plus que deux tiers des pays ou des régions choisis ne sont pas asiatiques. Donc, certains ingrédients comme "olive oil" et "cayenne" ont plus de variances parce que une partie de recettes utilisent beaucoup cet ingrédient et les autres non. Certains ingrédients comme "soy sauce" et "sesame oil" sont faibles à la moyenne et à la variance parce que seulement les pays et les régions asiatiques vont les utiliser.
+\indent Nous nous intéressons par la corrélation entre les données. Pour les ingrédients, 
 
 \section{Analyse en composantes principales}
+La matrice que l'on étudie est de dimension $M_{26,50}$, elle est donc de rang inférieur à 26. L'inertie peut donc être entièrement expliquée par 26 composantes. En effectuant une ACP sur ces données on obtient donc les 26 composantes principales expliquant l'inertie du nuage de points. Si l'on cherche les valeurs propres de la matrice de covariance, on constate comme attendu que 24 des valeurs propres qui résultent sont nulles.\\
+
+\newpage
+On peut donc afficher l'inertie expliquée par chaque composantes et par la somme des n premiers axes.
+\begin{figure}[h]
+	\begin{center}
+		\includegraphics[scale = 0.32]{./doc/plot-inertie-par-composantes.png}
+		\includegraphics[scale = 0.32]{./doc/plot-inertie-n-composantes.png}
+	\end{center}
+\end{figure}
+
+On constate que les deux premières composantes, bien qu'insuffisantes pour expliquer complètement les différences entre tous les points, permettent d'expliquer plus de 60\% de l'inertie. Il peut donc être intéressant d'afficher les points en fonction de ces composantes.
+\begin{figure}[h]
+	\begin{center}
+		\includegraphics[scale = 0.32]{./doc/plot-recettes-composantes-1-2.png}
+	\end{center}
+\end{figure}
+
+Par ce simple graphique on constate déjà certains regroupement entre les recettes des différents pays, avec trois groupes principaux qui ressortent. grossièrement on a les recettes des pays asiatiques, des pays occidentaux et des pays méditerranéens. Ces deux composantes sont cependant insuffisantes à expliquer l'ensemble des subtilités de ces données, 6 composantes sont nécessaire pour expliquer 90\% de l'inertie.
+
 
 \section{Analyse ascendante hiérarchique}
 

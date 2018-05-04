@@ -21,9 +21,6 @@ boxplot(recettes.pays[colMeans(recettes.pays) > 0.15], las = 2) # most used ingr
 
 acp.recettes.pays <- prcomp(recettes.pays)  # ACP - variables = ingrédients
 
-plot(acp.recettes.pays$x[,1:2])
-text(acp.recettes.pays$x[,1:2], row.names(recettes.pays), pos=3)
-
 acp.recettes.pays$sdev # racine carrée des valeurs absolues
 acp.recettes.pays.inertie <- acp.recettes.pays$sdev ^ 2 # valeurs absolues de la matrice de covarience
 
@@ -38,8 +35,30 @@ inertie_total <- sum(acp.recettes.pays.inertie)
 acp.recettes.pays.inertiep <- acp.recettes.pays.inertie / inertie_total * 100
 inertie_explique <- apply(t(1:26), 2, function(x) sum(acp.recettes.pays.inertiep[1:x]))
 
+plot(acp.recettes.pays.inertiep,
+     main = "Inertie expliquée par composante",
+     xlab = "Nombre de composantes",
+     ylab = "Inertie expliquée (%)"
+)
+plot(inertie_explique,
+     main = "Inertie expliquée par les n premières composantes",
+     xlab = "Nombre de composantes",
+     ylab = "Inertie expliquée (%)",
+     ylim = c(0, 100)
+)
+
+
+plot(acp.recettes.pays$x[,1:2])
+text(acp.recettes.pays$x[,1:2], row.names(recettes.pays), pos=3)
+
+biplot(acp.recettes.pays) # illisible
+
 # TODO : contributions relatives aux axes - individus ?
 # plot des anciens axes dans le nouveau - à voir - certainement ilisible
+
+plot(acp.recettes.pays$rotation[,1:2])
+text(acp.recettes.pays$rotation[,1:2], colnames(recettes.pays), pos=3)
+draw.circle(radius = 1)
 
 ## 3 - Analyse ascendante hiérarchique
 
