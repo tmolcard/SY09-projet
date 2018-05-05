@@ -5,7 +5,7 @@
 ## 1 - description
 recettes.pays <- read.csv("donnees/recettes-pays.data", row.names = 1)
 na.fail(recettes.pays)
-
+rowSums(recettes.pays)
 dim(recettes.pays)
 summary(recettes.pays)
 
@@ -51,6 +51,9 @@ plot(inertie_explique,
 plot(acp.recettes.pays$x[,1:2])
 text(acp.recettes.pays$x[,1:2], row.names(recettes.pays), pos=3)
 
+plot(acp.recettes.pays$x[,c(1,3)])
+text(acp.recettes.pays$x[,c(1,3)], row.names(recettes.pays), pos=3)
+
 biplot(acp.recettes.pays) # illisible
 
 # TODO : contributions relatives aux axes - individus ?
@@ -58,7 +61,6 @@ biplot(acp.recettes.pays) # illisible
 
 plot(acp.recettes.pays$rotation[,1:2])
 text(acp.recettes.pays$rotation[,1:2], colnames(recettes.pays), pos=3)
-draw.circle(radius = 1)
 
 ## 3 - Analyse ascendante hiérarchique
 
@@ -70,9 +72,31 @@ plot(hclust.recettes.pays)
 
 ## 4 - K-means
 
-kmeans.recette.pays <- kmeans(recettes.pays, rbind(recettes.pays["American",], recettes.pays["African",], recettes.pays["Asian",]), iter.max = 30)
-plot(acp.recettes.pays$x[,1:2], col = c("red","green","blue")[kmeans.recette.pays$cluster])
-text(acp.recettes.pays$x[,1:2], row.names(recettes.pays), pos=3, col = c("red","green","blue")[kmeans.recette.pays$cluster])
+kmeans.inertia <- function(tab, maxK = 10, n = 20) {
+  inertia <- vector(length = maxK)
+  for(k in 1:maxK) {
+    inertia[k] <- sum(kmeans(tab, k, nstart = n)$withinss)
+  }
+  
+  return(inertia)
+}
+
+plot(kmeans.inertia(recettes.pays, 10, 20),
+     ylab = "Inertie total",
+     xlab = "Nombre de centres"
+)
+
+kmeans.recette.pays <- kmeans(recettes.pays, centers = 3, nstart = 20)
+kmeans.recette.pays <- kmeans(recettes.pays, centers = 7, nstart = 20)
+
+
+plot(acp.recettes.pays$x[,1:2],
+     col = c("red","green","blue","purple","orange")[kmeans.recette.pays$cluster]
+)
+text(acp.recettes.pays$x[,1:2],
+     row.names(recettes.pays), pos=3,
+     col = c("red","green","blue","purple","orange")[kmeans.recette.pays$cluster]
+)
 
 ## 5 - Classification géographique des origines
 
@@ -87,7 +111,10 @@ na.fail(recettes.echant)
 
 summary(recettes.echant)
 
-sort(table(recettes.echant[,1]), decreasing = T)
+dim(recettes.echant)
+
+barplot(sort(table(recettes.echant[,1]), decreasing = T), las = 2, cex.names = 0.7)
+
 
 # TODO : blabla
 
@@ -110,13 +137,27 @@ for (i in 1:length(ingredients)) {
   }
 }
 
+# On retrouve a quelques facteurs et approximations pres les donnees du precedent dataset.
+acp.p.r <- prcomp(t(ingredients.pays))
+plot(acp.p.r$x[,1], -acp.p.r$x[,2])
+text(acp.p.r$x[,1], -acp.p.r$x[,2], row.names(t(ingredients.pays)), pos=3)
+
+
 # TODO : similarités - disimilarités
 disim.ingredients.pays <- dist(ingredients.pays, "euclidian") # pris au hasard, y reflechir !!!
 
+# test
+library(philentropy)
+m <- as.matrix(t(recettes.echant[,2:51]))
+colnames(m) <- recettes.echant[,1]
+disim.ingredients.pays <- distance(t(recettes.echant[,2:51]), method = "jaccard")
+
+colnames(disim.ingredients.pays) <- colnames(recettes.echant[,2:51])
+rownames(disim.ingredients.pays) <- colnames(recettes.echant[,2:51])
 
 ## 8 - classif ascendante hierarchique
 
-hclust.ingredients.pays <- hclust(disim.ingredients.pays) # methodes : "single", "average", ...
+hclust.ingredients.pays <- hclust(as.dist(disim.ingredients.pays)) # methodes : "single", "average", ...
 plot(hclust.ingredients.pays)
 
 
@@ -124,7 +165,9 @@ plot(hclust.ingredients.pays)
 
 library(cluster)
 pam.recettes.pays <- pam(ingredients.pays, 3)
+pam.recettes.pays <- pam(as.dist(disim.ingredients.pays), 3)
 plot(pam.recettes.pays)
+
 
 
 
