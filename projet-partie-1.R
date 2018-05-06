@@ -98,6 +98,7 @@ text(acp.recettes.pays$x[,1:2],
      col = c("red","green","blue","purple","orange")[kmeans.recette.pays$cluster]
 )
 
+
 ## 5 - Classification géographique des origines
 
 # s'ils nous demande de dire que  les mexicains sont loins des allemands et de dire qu'on le retrouve 
@@ -116,61 +117,38 @@ dim(recettes.echant)
 barplot(sort(table(recettes.echant[,1]), decreasing = T), las = 2, cex.names = 0.7)
 
 
-# TODO : blabla
-
 ## 7 - group ingrédients
 
-pays <- unique(recettes.echant[,1])
-ingredients <- colnames(recettes.echant[,2:ncol(recettes.echant)])
-
-ingredients.pays <- data.frame(matrix(nrow = length(ingredients), ncol = length(pays)))
-colnames(ingredients.pays) <- pays
-row.names(ingredients.pays) <- ingredients
-
-for (i in 1:length(ingredients)) {
-  ingredient <- ingredients[i]
-  
-  for (j in 1:length(pays)) {
-    p <- pays[j]
-    
-    ingredients.pays[i, j] <- mean(recettes.echant[recettes.echant[,1] == p,][,ingredient])
-  }
-}
-
-# On retrouve a quelques facteurs et approximations pres les donnees du precedent dataset.
-acp.p.r <- prcomp(t(ingredients.pays))
-plot(acp.p.r$x[,1], -acp.p.r$x[,2])
-text(acp.p.r$x[,1], -acp.p.r$x[,2], row.names(t(ingredients.pays)), pos=3)
-
-
-# TODO : similarités - disimilarités
-disim.ingredients.pays <- dist(ingredients.pays, "euclidian") # pris au hasard, y reflechir !!!
-
-# test
-library(philentropy)
-m <- as.matrix(t(recettes.echant[,2:51]))
-colnames(m) <- recettes.echant[,1]
-disim.ingredients.pays <- distance(t(recettes.echant[,2:51]), method = "jaccard")
-
-colnames(disim.ingredients.pays) <- colnames(recettes.echant[,2:51])
-rownames(disim.ingredients.pays) <- colnames(recettes.echant[,2:51])
+ingredients.pays <- t(recettes.echant[,2:51])
+disim.ingredients <- dist(ingredients.pays, method = "binary")
 
 ## 8 - classif ascendante hierarchique
 
-hclust.ingredients.pays <- hclust(as.dist(disim.ingredients.pays)) # methodes : "single", "average", ...
-plot(hclust.ingredients.pays)
+hclust.ingredients <- hclust(disim.ingredients, method = "ward.D2")
+
+plot(hclust.ingredients,
+     main = "Classification ascendante hiérarchique (Ward.D2)",
+     xlab = "Ingrédients", sub = "")
 
 
 ## 9 - k-médoïdes
 
 library(cluster)
-pam.recettes.pays <- pam(ingredients.pays, 3)
-pam.recettes.pays <- pam(as.dist(disim.ingredients.pays), 3)
-plot(pam.recettes.pays)
 
+pam.ingredients <- pam(disim.ingredients, 2)
+clusplot(pam.ingredients, labels = 3, color=TRUE, shade=TRUE, lines=0, col.p="black", main = "K-Medïodes (k=2)")
 
+pam.ingredients <- pam(disim.ingredients, 3)
+clusplot(pam.ingredients, labels = 3, color=TRUE, shade=TRUE, lines=0, col.p="black", main = "K-Medïodes (k=3)")
 
+pam.ingredients <- pam(disim.ingredients, 5)
+clusplot(pam.ingredients, labels = 3, color=TRUE, shade=TRUE, lines=0, col.p="black", main = "K-Medïodes (k=5)")
 
+pam.ingredients <- pam(disim.ingredients, 8)
+clusplot(pam.ingredients, labels = 3, color=TRUE, shade=TRUE, lines=0, col.p="black", main = "K-Medïodes (k=8)")
+
+pam.ingredients$medoids
+pam.ingredients$clusinfo
 
 
 

@@ -1,93 +1,69 @@
-source("./fonctions/distXY.r")
-kmeans.addaptative <- function(X, k, volk = rep(1, k), niter = 100, ness = 1, eps = 10^-5) {
-  
-  result = NA
-  
-  n <- nrow(X)
-  p <- ncol(X)
-  
-  for (ess in 1:ness){
-    
-    # initialisation
-  
-    U.k <- X[sample(n, k), ]                        # center of groups
-  
-    V.k <- array(diag(p), c(p, p, k)) * volk^(-1/p) # cov. mat.
-  
-    grp <- array(NA, n)                             # groups
-    dist.X <- matrix(NA, n, k)                      # dist. mat.
-  
-    for (i in 1:k) {
-      dist.X[,i] <- distXY(X, U.k[i,], solve(V.k[,,i]))
-    }
-    grp <- apply(dist.X, 1, which.min)
-  
-    # iterations
-  
-    for (iter in 1:niter) {
-    
-      U.kp <- U.k
-    
-      
-      for (i in 1:k) {
-        
-        grp.i <- grp == i
-        grp.nb <- nrow(X[grp.i,])
-        
-        if(qr(X[grp.i,])$rank <= p){
-          break #If the rank of the matrix is < P
-        }
-        
-        U.k[i,] <- colMeans(X[grp.i,])                        # update centers
-        
-        V.k[,,i] <- cov(X[grp.i,]) * (grp.nb-1) / grp.nb      # update cov. mat.
-        V.k[,,i] <- V.k[,,i] * (volk[i]*det(V.k[,,i]))^(-1/p) # normalizing
-        
-        dist.X[,i] <- distXY(X, U.k[i,], solve(V.k[,,i])) # compute new Mahalanobis dist.
-      }
-      
-      grp <- apply(dist.X, 1, which.min) 
-      
-      if (sum((U.k-U.kp)^2) < eps) {
-        break
-      }
-    }
-    
-    crit <- sum(apply(t(1:n), 2, function(x) dist.X[x,grp[x]])) # sum(dist.X[,grp])
-    
-    # algorithm has converged
-    if (ess == 1) {
-      result <- list(groups = grp, centers = U.k, nrml.cov = V.k, nb.iter = iter, crit = crit)
-    } else if (crit < result$crit) {
-      result <- list(groups = grp, centers = U.k, nrml.cov = V.k, nb.iter = iter, crit = crit)
-    }
-  }
-    
-  return(result)
-}
-
-## application
-
-acp.iris <- princomp(iris[1:4])
-grp.iris <- kmeans.addaptative(as.matrix(iris[,1:4]), 3, ness = 200)
-
-plot(acp.iris$scores[,2]~acp.iris$scores[,1], col = c("red","green","blue")[iris[,5]])
-plot(acp.iris$scores[,2]~acp.iris$scores[,1], col = c("red","green","blue")[grp.iris$groups], pch = c(2, 4, 8)[iris[,5]])
-grp.iris$crit
-grp.iris$centers
+source("./KmeansAdaptative.R")
 
 
-##2.2
+## Données synthetiques
 
-X <- read.csv("donnees/Synth1.csv", header=T, row.names=1)
+X <- read.csv("donnees/Synth3.csv", header=T, row.names=1)
 z <- X[,3]
 X <- X[,-3]
 
-grp.X <- kmeans.addaptative(as.matrix(X), 2, ness = 5)
-grp.km.X <- kmeans(X, X[sample(nrow(X), 2), ], iter.max = 100, nstart = 5)
+# valeurs réelles
+plot(X, col = c(1:2)[z], pch = c(1, 2)[z])
 
-plot(X[,2]~X[,1], col = c("red","blue")[z])
-plot(X[,2]~X[,1], col = c("red","blue")[grp.X$groups], pch = c(2, 4)[z])
-points(grp.X$centers, pch = 3, cex = 3)
-plot(X[,2]~X[,1], col = c("red","blue")[grp.km.X$cluster], pch = c(2, 4)[z])
+# addaptative k-means
+grp.synth <- KmeansAdaptative(X, 2, niter = 100, ness = 200)
+plot(X, col = c(1:2)[grp.synth$partition], pch = c(1,2)[z])
+points(grp.synth$centres, pch = 3, cex = 3)
+grp.synth$crit
+grp.synth$centers
+
+# classic k-means
+grp.synth <- kmeans(X, 2, iter.max = 100, nstart = 200)
+plot(X, col = c(1:2)[grp.synth$cluster], pch = c(1,2)[z])
+
+
+
+## Iris
+
+acp.iris <- princomp(iris[1:4])
+
+# valeurs réelles
+plot(acp.iris$scores[,2]~acp.iris$scores[,1], col = c("red","green","blue")[iris[,5]])
+
+# addaptative k-means
+grp.iris <- KmeansAdaptative(as.matrix(iris[,1:4]), 3, niter = 100, ness = 200)
+plot(acp.iris$scores[,2]~acp.iris$scores[,1], col = c(1:3)[grp.iris$partition], pch = c(2, 4, 8)[iris[,5]])
+grp.iris$crit
+grp.iris$centres
+
+# classic k-means
+grp.iris <- kmeans(as.matrix(iris[,1:4]), 3, iter.max = 100, nstart = 200)
+plot(acp.iris$scores[,2]~acp.iris$scores[,1], col = c(1:3)[grp.iris$cluster], pch = c(2, 4, 8)[iris[,5]])
+
+
+
+## Spam
+
+Spam <- read.csv("donnees/spam.csv", header=T, row.names=1)
+X <- Spam[,-58]
+z <- Spam[,58]
+
+table(z)
+
+acp.spam <- princomp(X)
+
+# valeurs réelles
+plot(acp.spam$scores[,c(1,2)], col=c(1:2)[z], pch = c(1,2)[z])
+plot(acp.spam$scores[,c(2,3)], col=c(1:2)[z], pch = c(1,2)[z])
+
+
+# addaptative k-means
+grp.spam <- KmeansAdaptative(X, 2, v = c(0.4, 0.6), niter = 100, ness = 200)
+plot(acp.spam$scores[,c(2,3)], col = c(1,2)[grp.spam$partition], pch = c(1,2)[z])
+grp.spam$crit
+grp.spam$centers
+
+# classic k-means
+grp.spam <- kmeans(X, 2, iter.max = 100, nstart = 200)
+plot(acp.spam$scores[,c(2,3)], col = c(1,2)[grp.spam$cluster], pch = c(1,2)[z])
 

@@ -111,7 +111,7 @@ On peut par exemple être surpris par la proximité entre les recettes des pays 
 \end{figure}
 
 \section{Analyse ascendante hiérarchique}
-Nous avons choisi la méthode de Ward. Le critère de Ward est un critère d'inertie qui représente l'inertie inter-classe de deux classes quand nous faisons une fusion entre ces deux classes, donc en minimisant ce critère, nous pouvons obtenir une optimisation locale. En addition, les résultats obtenu par le critère d'inertie sont conjointement à la méthode ACP.
+Nous avons choisi la méthode de Ward. Le critère de Ward est un critère d'inertie qui représente l'inertie inter-classe de deux classes quand nous faisons une fusion entre ces deux classes, donc en minimisant ce critère, nous pouvons obtenir une optimisation locale. Comme la distance n'est pas en carré, nous avons choisi \textbf{Ward.D2} pour l'argument de méthode.
 \begin{figure}[h]
 	\begin{center}
 		\includegraphics[scale = 0.32]{./doc/plot-CAH.png}
@@ -171,21 +171,35 @@ De plus les recettes sont issues des traditions culinaires et culturelle, qui so
 
 \section{Similarité - Dissimilarités}
 
-Pour transformer ce tableau en tableau individu variables portant sur les ingrédients il semble intéressant de calculer une fréquence d'apparition d'un ingrédient sur toutes les recettes d'un pays. Cela revient à faire la moyenne de toutes les valeurs de chaque ingrédient pour un même pays. Ainsi, même si un type de cuisine est moins représenté que les autres, les aliments de base de cette cuisine apparaîtront avec de forts coefficients dans la colonne représentant le pays en question.
-Cela permet de palier à la répartition très inégale des origines des recettes que l'on a a disposition.
-
-On choisit la distance euclidienne psk fuck yeah !
+On traite ici un tableau de données binaires et on ne s’intéresse qu'aux ingrédients, on choisit donc d'utiliser une méthode de calcul de similarités binaire adapté à ce genre de calcul. De plus la répartition des origines des recettes est très inégale dans ce jeu de données, les méthodes binaires permettent de palier naturellement à ce problème.
 
 
 \section{Classification ascendante hiérarchique}
 
+\begin{figure}[h]
+	\begin{center}
+		\includegraphics[scale = 0.45]{./doc/plot-hclust-ingredients.png}
+	\end{center}
+\end{figure}
+
+
 \section{K-Médïodes}
+
+\begin{figure}[h]
+	\begin{center}
+		\includegraphics[scale = 0.45]{./doc/kmediodes-2.png}
+		\includegraphics[scale = 0.45]{./doc/kmediodes-3.png}
+		\includegraphics[scale = 0.45]{./doc/kmediodes-5.png}
+		\includegraphics[scale = 0.45]{./doc/kmediodes-8.png}
+	\end{center}
+\end{figure}
+
 
 
 
 \chapter{K-Means Adaptatif}
 
-
+Le K-Means clustering est une méthode assez simple et performante pour la partition des données. Mais la méthode K-Means fonctionne bien pour les données qui ont la distribution sphérique parce qu'elle utilise la métrique de distance euclidienne pour calculer. Pour améliorer ce défaut, il faut changer la distance euclidienne par la distance de Mahalanobis afin de tenir en compte de la dispersion de données.
 \section{Données synthétiques}
 
 \section{Iris}
