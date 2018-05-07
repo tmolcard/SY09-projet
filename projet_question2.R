@@ -3,7 +3,7 @@
 # Question 2 ---------------------
 source("fonctions/distXY.r")
 
-KmeansDistAdaptative <- function(X, centers, v=rep(1,K), niter=100, ness=1, eps=1e-5){
+KmeansDistAdaptative <- function(X, centers, v, niter=100, ness=1, eps=1e-5){
   # --- preparation ---
   if(!is.matrix(X)) X <- as.matrix(X)
   n <- nrow(X)
@@ -13,16 +13,18 @@ KmeansDistAdaptative <- function(X, centers, v=rep(1,K), niter=100, ness=1, eps=
   for(ess in 1:ness){
     
     # --- initialisation ---
-    if(class(centers) == "numeric"){
+    # si centers est un chiffre qui indique le nombre de groupes
+    if(class(centers) == "numeric") {
       # centres des groupes
       K <- centers
       centers <- X[sample(n, K),]
-    }
-    else if(ncol(centers) == p){
-      if(!is.matrix(centers)) centers <- as.matrix(centers)
+      v <- rep(1,K)
+    # si centers est les coordonnees
+    } else if(ncol(centers) == p) {
+      if(!is.matrix(centers)) { centers <- as.matrix(centers) }
       K <- nrow(centers)
-    }
-    else{
+      v <- rep(1,K)
+    } else {
       cat("Error : Format of centers not correct !")
       return(res)
     }
@@ -50,11 +52,12 @@ KmeansDistAdaptative <- function(X, centers, v=rep(1,K), niter=100, ness=1, eps=
         # nouvelles centres
         centers[k,] <- colMeans(X[grp_k,])
         # nouvelle covariance au sein de groupe
-        V[,,k] <- cov(X[grp_k,]) * (grp_nb-1) / grp_nb
+        VCov <- cov(X[grp_k,]) * (grp_nb-1) / grp_nb
           # VCov <- tcrossprod(apply(X[P==k,], 1, function(x) x-centers[k,])) / nrow(X[P==k,])
           # OU crossprod(sweep(X[P==k,], 2, centers[k,])) / nb
         # nouvelle covariance corrigee
-        V[,,k] <- (v[k] * det(V[,,k]))^(-1/p) * V[,,k]
+        # bug
+        V[,,k] <- (v[k] * det(VCov))^(-1/p) * VCov
         # nouvelle distance
         distance[,k] <- distXY(X, centers[k,], solve(V[,,k]))
       }
@@ -87,6 +90,7 @@ plot(X, col=c("red", "blue")[z], pch=c(21,24)[z])
 resKmeansClassique <- kmeans(X, 2, nstart=5)
 resKmeansDistAdaptative <- KmeansDistAdaptative(X, 2, ness=5)
 adjustedRandIndex(resKmeansClassique$cluster,z)
+adjustedRandIndex(resKmeansDistAdaptative$partition,z)
 plot(X, col=c("red", "blue")[resKmeansClassique$cluster], 
      pch=c(21,24)[resKmeansClassique$cluster])
 adjustedRandIndex(resKmeansDistAdaptative$partition,z)
@@ -118,6 +122,8 @@ z <- iris[,5]
 
 resKmeansClassique <- kmeans(X, 2, nstart=5)
 resKmeansDistAdaptative <- KmeansDistAdaptative(X, 3, ness=5)
+adjustedRandIndex(resKmeansClassique$cluster,z)
+adjustedRandIndex(resKmeansDistAdaptative$partition,z)
 
 resKmeansClassique <- kmeans(X, 3, nstart=5)
 resKmeansDistAdaptative <- KmeansDistAdaptative(X, 3, ness=5)
@@ -132,9 +138,11 @@ resKmeansDistAdaptative <- KmeansDistAdaptative(X, 5, ness=5)
 
 # Spam
 Spam <- read.csv("donnees/spam.csv", header=T, row.names=1)
-X <- Spam[,-58]
+X <- Spam[,-c(56,57,58)]
 z <- Spam[,58]
+X[X != 0] <- 1
 resKmeansClassique <- kmeans(X, 2, nstart=5)
+
 resKmeansDistAdaptative <- KmeansDistAdaptative(X, 2, ness=5)
 # Error in chol.default(M) : 
 #  the leading minor of order 1 is not positive definite
