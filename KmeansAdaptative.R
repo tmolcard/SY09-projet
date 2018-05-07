@@ -12,9 +12,11 @@ KmeansAdaptative <- function(X, centers.init, v=rep(1, K), niter=100, ness=1, ep
   res <- NA
   
   for(ess in 1:ness){
+    print("essai")
+    print(ess)
     
     # --- initialisation ---
-    if(class(centers.init) == "numeric"){
+    if(is.numeric(centers.init)){
       K <- centers.init
       centers <- X[sample(n, K),]
     }
@@ -40,6 +42,8 @@ KmeansAdaptative <- function(X, centers.init, v=rep(1, K), niter=100, ness=1, ep
     
     
     for(i in 1:niter){
+      print("iter")
+      print(i)
       
       # --- mise a jour des parametres ---
       
