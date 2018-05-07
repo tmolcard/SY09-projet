@@ -138,12 +138,23 @@ resKmeansDistAdaptative <- KmeansDistAdaptative(X, 5, ness=5)
 
 # Spam
 Spam <- read.csv("donnees/spam.csv", header=T, row.names=1)
-X <- Spam[,-c(56,57,58)]
+X <- Spam[,-c(55,56,57,58)]
 z <- Spam[,58]
+# pourcentage ne peut pas bien representer la distance
 X[X != 0] <- 1
-resKmeansClassique <- kmeans(X, 2, nstart=5)
+# raison possible, les mots appraissent sont fortement correles
+# faire pca pour avoir des nouveaux axes
+X.pca <- princomp(cor(X))
+summary(X.pca) # 29 -> 90%
+X2 <- as.matrix(X) %*% as.matrix(X.pca$loadings)
+# X2 <- as.matrix(X) %*% as.matrix(X.pca$loadings)
+X2 <- X2[,1:29]
 
-resKmeansDistAdaptative <- KmeansDistAdaptative(X, 2, ness=5)
+resKmeansClassique <- kmeans(X2, 2, nstart=5)
+adjustedRandIndex(resKmeansClassique$cluster,z)
+resKmeansDistAdaptative <- KmeansDistAdaptative(X2, 2, ness=5)
+adjustedRandIndex(resKmeansDistAdaptative$partition,z)
+
 # Error in chol.default(M) : 
 #  the leading minor of order 1 is not positive definite
 # pre-traitement ?
