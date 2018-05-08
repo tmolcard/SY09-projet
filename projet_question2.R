@@ -144,16 +144,28 @@ z <- Spam[,58]
 X[X != 0] <- 1
 # raison possible, les mots appraissent sont fortement correles
 # faire pca pour avoir des nouveaux axes
-X.pca <- princomp(cor(X))
-summary(X.pca) # 29 -> 90%
-X2 <- as.matrix(X) %*% as.matrix(X.pca$loadings)
-# X2 <- as.matrix(X) %*% as.matrix(X.pca$loadings)
-X2 <- X2[,1:29]
+X.pca <- princomp(cov(X))
+summary(X.pca) # 12 -> 90%
+Xt <- as.matrix(X) %*% as.matrix(X.pca$loadings)
+# X2 <- as.matrix(X) %*% as.matrix(X.pca2$x)
+X2 <- Xt[,1:22]
 
 resKmeansClassique <- kmeans(X2, 2, nstart=5)
 adjustedRandIndex(resKmeansClassique$cluster,z)
 resKmeansDistAdaptative <- KmeansDistAdaptative(X2, 2, ness=5)
 adjustedRandIndex(resKmeansDistAdaptative$partition,z)
+
+# voir les resultats avec diff nombre de composants
+# validation croisee apres
+indexres <- matrix(0, nrow = 18, ncol = 2)
+for(i in 8:25){
+  X2 <- Xt[,1:i]
+  resKmeansClassique <- kmeans(X2, 2, nstart=5)
+  indexres[i-7,1] <- adjustedRandIndex(resKmeansClassique$cluster,z)
+  resKmeansDistAdaptative <- KmeansDistAdaptative(X2, 2, ness=5)
+  indexres[i-7,2] <- adjustedRandIndex(resKmeansDistAdaptative$partition,z)
+}
+# meilleurs <- 22,23
 
 # Error in chol.default(M) : 
 #  the leading minor of order 1 is not positive definite
