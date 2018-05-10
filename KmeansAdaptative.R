@@ -1,8 +1,6 @@
 source("./fonctions/distXY.r")
 
 KmeansAdaptative <- function(X, centers.init, v=rep(1, K), niter=100, ness=1, eps=1e-5){
-  count1 = 1
-  count2 = 1
   
   # --- preparation ---
   if(!is.matrix(X)) X <- as.matrix(X)
@@ -12,8 +10,7 @@ KmeansAdaptative <- function(X, centers.init, v=rep(1, K), niter=100, ness=1, ep
   res <- NA
   
   for(ess in 1:ness){
-    print("essai")
-    print(ess)
+    # print(paste("essai :", ess))
     
     # --- initialisation ---
     if(is.numeric(centers.init)){
@@ -42,8 +39,6 @@ KmeansAdaptative <- function(X, centers.init, v=rep(1, K), niter=100, ness=1, ep
     
     
     for(i in 1:niter){
-      print("iter")
-      print(i)
       
       # --- mise a jour des parametres ---
       
@@ -57,7 +52,7 @@ KmeansAdaptative <- function(X, centers.init, v=rep(1, K), niter=100, ness=1, ep
         grp_nb <- nrow(X[grp_k,])
         
         if(is.null(grp_nb) || det(cov(X[grp_k,])) < 1e-10 ){
-          break
+          next
         }
         
         # nouveau centre de partition

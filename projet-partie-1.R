@@ -5,17 +5,31 @@
 ## 1 - description
 recettes.pays <- read.csv("donnees/recettes-pays.data", row.names = 1)
 na.fail(recettes.pays)
-rowSums(recettes.pays)
 dim(recettes.pays)
+
+rowSums(recettes.pays)
 summary(recettes.pays)
 
-cor(recettes.pays)    # correlation entre les ingrédients
-cor(t(recettes.pays)) # correlation entre pays
-
 boxplot(recettes.pays, las = 2)
+hist(recettes.pays$olive_oil)
+hist(recettes.pays$cayenne)
+hist(recettes.pays$soy_sauce)
+hist(recettes.pays$sesame_oil)
 boxplot(recettes.pays[colMeans(recettes.pays) > 0.15], las = 2) # most used ingredients
+## correlation
+M <- cor(recettes.pays)    # correlation entre les ingrédients
+M2 <- cor(t(recettes.pays)) # correlation entre pays
+# install.packages("corrplot")
+library(corrplot)
+corrplot(M, type="upper", tl.col = "black", tl.srt = 45)
+corrplot(M2, type="upper", tl.col = "black", tl.srt = 45)
+sum <- length(cor(recettes.pays)[upper.tri(cor(recettes.pays))]) - 50 # nom total de cor entre vars
+correlation <- cor(recettes.pays)[upper.tri(cor(recettes.pays))] # valeurs de cor
+# parce que > 0.3 cor moyenne, > 0.5 cor forte
+(length(correlation[abs(correlation) >= 0.3]) - 50 )/sum * 100 # % de cor > 0.3
+(length(correlation[abs(correlation) >= 0.5]) - 50 )/sum * 100 # % de cor > 0.5
+# on peut aussi utiliser chart.Correlation(recettes.pays)
 
-# plot(recettes.pays[cor(recettes.pays) > 0.9])
 
 ## 2 - ACP
 
@@ -46,6 +60,8 @@ plot(inertie_explique,
      ylab = "Inertie expliquée (%)",
      ylim = c(0, 100)
 )
+lines(inertie_explique, col = "red")
+abline(h=90, lty=2, col = "blue")
 
 
 plot(acp.recettes.pays$x[,1:2])
@@ -54,37 +70,42 @@ text(acp.recettes.pays$x[,1:2], row.names(recettes.pays), pos=3)
 plot(acp.recettes.pays$x[,c(1,3)])
 text(acp.recettes.pays$x[,c(1,3)], row.names(recettes.pays), pos=3)
 
-biplot(acp.recettes.pays) # illisible
 
-# TODO : contributions relatives aux axes - individus ?
-# plot des anciens axes dans le nouveau - à voir - certainement ilisible
+par(mfrow=c(1,2))
+biplot(acp.recettes.pays, choices = c(1,2))
+biplot(acp.recettes.pays, choices = c(1,3))
+par(mfrow=c(1,1))
 
-plot(acp.recettes.pays$rotation[,1:2])
-text(acp.recettes.pays$rotation[,1:2], colnames(recettes.pays), pos=3)
 
 ## 3 - Analyse ascendante hiérarchique
+# Manhattan = somme|xj − yj|
 
 dist.recettes.pays <-dist(recettes.pays, method = "manhattan")
-
-hclust.recettes.pays <- hclust(dist.recettes.pays) # methodes : "single", "average", ...
-plot(hclust.recettes.pays)
-
+hclust.recettes.pays <- hclust(dist.recettes.pays, method = "ward.D")
+plot(hclust.recettes.pays, main = "Classification Ascendante Hiérarchique (CAH)",
+     ylab="Distance calculee par le critere de Ward")
 
 ## 4 - K-means
 
-kmeans.inertia <- function(tab, maxK = 10, n = 20) {
-  inertia <- vector(length = maxK)
+kmeans.inertie <- function(tab, maxK = 10, n = 20) {
+  inertie <- vector(length = maxK)
   for(k in 1:maxK) {
-    inertia[k] <- sum(kmeans(tab, k, nstart = n)$withinss)
+    inertie[k] <- sum(kmeans(tab, k, nstart = n)$withinss)
   }
   
-  return(inertia)
+  return(inertie)
 }
 
-plot(kmeans.inertia(recettes.pays, 10, 20),
+inertie.centres <- kmeans.inertie(recettes.pays, 10, 20)
+plot(inertie.centres,
      ylab = "Inertie total",
-     xlab = "Nombre de centres"
+     xlab = "Nombre de centres",
+     main = "Inertie totale en fonction du nombre de centres"
 )
+lines(inertie.centres)
+abline(v=3, lty=2, col = "blue")
+abline(v=5, lty=2, col = "red")
+
 
 kmeans.recette.pays <- kmeans(recettes.pays, centers = 3, nstart = 20)
 kmeans.recette.pays <- kmeans(recettes.pays, centers = 7, nstart = 20)
@@ -99,11 +120,6 @@ text(acp.recettes.pays$x[,1:2],
 )
 
 
-## 5 - Classification géographique des origines
-
-# s'ils nous demande de dire que  les mexicains sont loins des allemands et de dire qu'on le retrouve 
-# dans la classif obtenue ok, sinon je ne vois pas comment faire.
-
 
 ## 6 - description des données
 
@@ -114,7 +130,8 @@ summary(recettes.echant)
 
 dim(recettes.echant)
 
-barplot(sort(table(recettes.echant[,1]), decreasing = T), las = 2, cex.names = 0.7)
+barplot(sort(table(recettes.echant[,1]), decreasing = T), las = 2, cex.names = 0.7,
+        main = "Occurences des origines")
 
 
 ## 7 - group ingrédients
@@ -135,20 +152,18 @@ plot(hclust.ingredients,
 
 library(cluster)
 
-pam.ingredients <- pam(disim.ingredients, 2)
-clusplot(pam.ingredients, labels = 3, color=TRUE, shade=TRUE, lines=0, col.p="black", main = "K-Medïodes (k=2)")
-
-pam.ingredients <- pam(disim.ingredients, 3)
-clusplot(pam.ingredients, labels = 3, color=TRUE, shade=TRUE, lines=0, col.p="black", main = "K-Medïodes (k=3)")
-
-pam.ingredients <- pam(disim.ingredients, 5)
-clusplot(pam.ingredients, labels = 3, color=TRUE, shade=TRUE, lines=0, col.p="black", main = "K-Medïodes (k=5)")
-
-pam.ingredients <- pam(disim.ingredients, 8)
-clusplot(pam.ingredients, labels = 3, color=TRUE, shade=TRUE, lines=0, col.p="black", main = "K-Medïodes (k=8)")
-
-pam.ingredients$medoids
-pam.ingredients$clusinfo
+for (i in c(2,3,5,8)) {
+  
+  print(paste("K =", i))
+  
+  pam.ingredients <- pam(disim.ingredients, i)
+  clusplot(pam.ingredients, labels = 3, color=TRUE, shade=TRUE, lines=0, col.p="black",
+           main = paste("K-Medïodes (k=", i, ")", sep=""))
+  
+  print(pam.ingredients$medoids)
+  print(pam.ingredients$clusinfo)
+  
+}
 
 
 
